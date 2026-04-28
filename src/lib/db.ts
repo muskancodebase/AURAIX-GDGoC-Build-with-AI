@@ -8,6 +8,22 @@ function getDb() {
     const dbPath = path.join(process.cwd(), 'syncguard.db');
     db = new Database(dbPath);
     db.exec(`
+      CREATE TABLE IF NOT EXISTS users (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        name          TEXT NOT NULL,
+        role          TEXT NOT NULL,
+        email         TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS sessions (
+        id         TEXT PRIMARY KEY,
+        user_id    INTEGER NOT NULL,
+        expires_at DATETIME NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+
       CREATE TABLE IF NOT EXISTS decisions (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
         founder_id  TEXT NOT NULL,
@@ -18,15 +34,15 @@ function getDb() {
       );
 
       CREATE TABLE IF NOT EXISTS conflicts (
-        id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-        decision_a_id       INTEGER NOT NULL,
-        decision_b_id       INTEGER NOT NULL,
-        severity            TEXT NOT NULL,
-        conflict_type       TEXT NOT NULL,
-        explanation         TEXT NOT NULL,
+        id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+        decision_a_id        INTEGER NOT NULL,
+        decision_b_id        INTEGER NOT NULL,
+        severity             TEXT NOT NULL,
+        conflict_type        TEXT NOT NULL,
+        explanation          TEXT NOT NULL,
         suggested_resolution TEXT NOT NULL,
-        status              TEXT DEFAULT 'open',
-        created_at          DATETIME DEFAULT CURRENT_TIMESTAMP,
+        status               TEXT DEFAULT 'open',
+        created_at           DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (decision_a_id) REFERENCES decisions(id),
         FOREIGN KEY (decision_b_id) REFERENCES decisions(id)
       );
