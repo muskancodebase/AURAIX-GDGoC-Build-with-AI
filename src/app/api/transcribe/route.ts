@@ -24,7 +24,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ text });
   } catch (error) {
-    console.error('Transcription error:', error);
-    return NextResponse.json({ error: 'Transcription failed' }, { status: 500 });
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('Transcription error:', errorMsg);
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }
