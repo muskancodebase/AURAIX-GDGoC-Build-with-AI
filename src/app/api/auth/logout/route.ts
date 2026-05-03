@@ -6,7 +6,7 @@ export async function POST() {
   try {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get(SESSION_COOKIE)?.value;
-    if (sessionId) deleteSession(sessionId);
+    if (sessionId) await deleteSession(sessionId);
 
     const res = NextResponse.json({ success: true });
     res.cookies.set(SESSION_COOKIE, '', { maxAge: 0, path: '/' });

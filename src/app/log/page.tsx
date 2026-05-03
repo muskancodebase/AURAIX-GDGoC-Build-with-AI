@@ -29,13 +29,11 @@ export default function LogPage() {
     setLoading(true);
     setResult(null);
 
-    const founder = localStorage.getItem('syncguard_founder') || 'Alice (CEO)';
-
     try {
       const res = await fetch('/api/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: content.trim(), category, founder_id: founder }),
+        body: JSON.stringify({ content: content.trim(), category }),
       });
       const data = await res.json();
       if (data.success) {

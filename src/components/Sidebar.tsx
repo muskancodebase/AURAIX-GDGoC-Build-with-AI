@@ -8,6 +8,7 @@ interface User { name: string; role: string; email: string; }
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard',     icon: '⚡' },
+  { href: '/history',   label: 'History',       icon: '🕐' },
   { href: '/log',       label: 'Log Decision',  icon: '✏️' },
   { href: '/conflicts', label: 'Conflict Inbox', icon: '⚠️' },
 ];
@@ -19,14 +20,15 @@ function initials(name: string) {
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  // null = loading, false = not authenticated, User = signed in
+  const [user, setUser] = useState<User | null | false>(null);
   const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/me')
-      .then((r) => r.json())
-      .then((d) => { if (d.user) setUser(d.user); })
-      .catch(() => {});
+      .then((r) => (r.ok ? r.json() : { user: null }))
+      .then((d) => setUser(d.user || false))
+      .catch(() => setUser(false));
   }, []);
 
   const handleLogout = async () => {
@@ -59,11 +61,26 @@ export default function Sidebar() {
       </div>
 
       <div className="sidebar-user">
-        {user ? (
+        <div className="sidebar-session-label">Active Session</div>
+
+        {user === null ? (
+          <div className="sidebar-skeleton">
+            <div className="skeleton-line" style={{ width: '75%', height: 13, marginBottom: 8 }} />
+            <div className="skeleton-line" style={{ width: '50%', height: 10 }} />
+          </div>
+        ) : user === false ? (
+          <div className="sidebar-not-signed-in">
+            <div className="sidebar-not-signed-in-title">Not signed in</div>
+            <div className="sidebar-not-signed-in-sub">Go to auth to continue</div>
+            <Link href="/auth" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: 10, textDecoration: 'none', display: 'flex', fontSize: 13 }}>
+              Sign in
+            </Link>
+          </div>
+        ) : (
           <>
             <div className="sidebar-user-info">
               <div className="sidebar-avatar">{initials(user.name)}</div>
-              <div>
+              <div style={{ minWidth: 0 }}>
                 <div className="sidebar-user-name">{user.name}</div>
                 <div className="sidebar-user-role">{user.role}</div>
               </div>
@@ -72,8 +89,6 @@ export default function Sidebar() {
               {loggingOut ? 'Signing out…' : '↩ Sign Out'}
             </button>
           </>
-        ) : (
-          <div style={{ height: 60, background: 'var(--bg-card)', borderRadius: 8, opacity: 0.4 }} />
         )}
       </div>
     </nav>

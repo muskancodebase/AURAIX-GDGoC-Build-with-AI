@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import getDb from './db';
+import { getDb, ensureSchema } from './db';
 
 export const SESSION_COOKIE = 'sg_session';
 const SESSION_DAYS = 7;
@@ -27,28 +27,41 @@ export interface SessionUser {
   email: string;
 }
 
-export function createSession(userId: number): string {
+export async function createSession(userId: number): Promise<string> {
+  await ensureSchema();
   const id = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 86_400_000).toISOString();
-  getDb()
-    .prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)')
-    .run(id, userId, expiresAt);
+  await getDb().execute({
+    sql: 'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)',
+    args: [id, userId, expiresAt],
+  });
   return id;
 }
 
-export function getSession(sessionId: string | undefined | null): SessionUser | null {
+export async function getSession(sessionId: string | undefined | null): Promise<SessionUser | null> {
   if (!sessionId) return null;
-  const row = getDb()
-    .prepare(`
-      SELECT u.id, u.name, u.role, u.email
-      FROM sessions s
-      JOIN users u ON s.user_id = u.id
-      WHERE s.id = ? AND datetime(s.expires_at) > datetime('now')
-    `)
-    .get(sessionId) as SessionUser | undefined;
-  return row ?? null;
+  await ensureSchema();
+  const result = await getDb().execute({
+    sql: `SELECT u.id, u.name, u.role, u.email
+          FROM sessions s JOIN users u ON s.user_id = u.id
+          WHERE s.id = ? AND datetime(s.expires_at) > datetime('now')`,
+    args: [sessionId],
+  });
+  if (!result.rows.length) return null;
+  const row = result.rows[0];
+  return {
+    id: Number(row.id),
+    name: row.name as string,
+    role: row.role as string,
+    email: row.email as string,
+  };
 }
 
-export function deleteSession(sessionId: string): void {
-  getDb().prepare('DELETE FROM sessions WHERE id = ?').run(sessionId);
+export async function deleteSession(sessionId: string): Promise<void> {
+  if (!sessionId) return;
+  await ensureSchema();
+  await getDb().execute({
+    sql: 'DELETE FROM sessions WHERE id = ?',
+    args: [sessionId],
+  });
 }
