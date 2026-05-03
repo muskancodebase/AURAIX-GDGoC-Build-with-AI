@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\Learning\\\\AI_project\\\\GDG_fsd\\\\ai-hackathon-submission-auraix\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(npx tsc *)",
+      "Bash(Remove-Item \"c:\\\\Learning\\\\AI_project\\\\GDG_fsd\\\\ai-hackathon-submission-auraix\\\\src\\\\proxy.ts\" -Force)"
+    ]
+  }
+}

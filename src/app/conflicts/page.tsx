@@ -60,14 +60,13 @@ export default function ConflictsPage() {
 
   const handleCreateTask = async (c: ConflictItem) => {
     setTaskLoading(c.id);
-    const founder = localStorage.getItem('syncguard_founder') || 'Alice (CEO)';
     const taskContent = `TASK from conflict #${c.id}: ${c.conflict_type}\n\nDecision A (${c.da_founder}): ${c.da_summary}\nDecision B (${c.db_founder}): ${c.db_summary}\n\nSuggested resolution: ${c.suggested_resolution}`;
 
     try {
       const res = await fetch('/api/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: taskContent, category: 'Other', founder_id: founder }),
+        body: JSON.stringify({ content: taskContent, category: 'Other' }),
       });
       const data = await res.json();
       if (data.success) {

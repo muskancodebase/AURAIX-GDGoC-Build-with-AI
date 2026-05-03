@@ -6,7 +6,7 @@ import { getSession, SESSION_COOKIE } from '@/lib/auth';
 export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies();
-    const user = getSession(cookieStore.get(SESSION_COOKIE)?.value);
+    const user = await getSession(cookieStore.get(SESSION_COOKIE)?.value);
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
     const body = await request.json();

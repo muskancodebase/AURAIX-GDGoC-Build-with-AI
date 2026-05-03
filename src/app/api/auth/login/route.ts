@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import getDb from '@/lib/db';
+import { getDb, ensureSchema } from '@/lib/db';
 import { verifyPassword, createSession, SESSION_COOKIE } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
@@ -10,17 +10,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    const user = getDb()
-      .prepare('SELECT id, name, role, email, password_hash FROM users WHERE email = ?')
-      .get(email.toLowerCase().trim()) as
-      | { id: number; name: string; role: string; email: string; password_hash: string }
-      | undefined;
+    await ensureSchema();
+    const result = await getDb().execute({
+      sql: 'SELECT id, name, role, email, password_hash FROM users WHERE email = ?',
+      args: [email.toLowerCase().trim()],
+    });
 
-    if (!user || !verifyPassword(password, user.password_hash)) {
+    if (!result.rows.length) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
-    const sessionId = createSession(user.id);
+    const row = result.rows[0];
+    const user = {
+      id: Number(row.id),
+      name: row.name as string,
+      role: row.role as string,
+      email: row.email as string,
+      password_hash: row.password_hash as string,
+    };
+
+    if (!verifyPassword(password, user.password_hash)) {
+      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+    }
+
+    const sessionId = await createSession(user.id);
 
     const res = NextResponse.json({
       success: true,

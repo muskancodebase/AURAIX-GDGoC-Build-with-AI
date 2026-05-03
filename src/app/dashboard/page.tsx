@@ -23,8 +23,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const founder = localStorage.getItem('syncguard_founder') || 'Alice (CEO)';
-    fetch(`/api/briefing?founder=${encodeURIComponent(founder)}`)
+    fetch('/api/briefing')
       .then((r) => r.json())
       .then((data) => {
         setTasks(data.tasks || []);

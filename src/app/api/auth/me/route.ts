@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get(SESSION_COOKIE)?.value;
-    const user = getSession(sessionId);
+    const user = await getSession(sessionId);
 
     if (!user) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });

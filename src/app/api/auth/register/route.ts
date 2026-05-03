@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import getDb from '@/lib/db';
+import { getDb, ensureSchema } from '@/lib/db';
 import { hashPassword, createSession, SESSION_COOKIE } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
@@ -13,19 +13,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
     }
 
+    await ensureSchema();
     const db = getDb();
-    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email.toLowerCase().trim());
-    if (existing) {
+
+    const existing = await db.execute({
+      sql: 'SELECT id FROM users WHERE email = ?',
+      args: [email.toLowerCase().trim()],
+    });
+    if (existing.rows.length) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
     }
 
     const password_hash = hashPassword(password);
-    const info = db
-      .prepare('INSERT INTO users (name, role, email, password_hash) VALUES (?, ?, ?, ?)')
-      .run(name.trim(), role.trim(), email.toLowerCase().trim(), password_hash);
+    const insertResult = await db.execute({
+      sql: 'INSERT INTO users (name, role, email, password_hash) VALUES (?, ?, ?, ?)',
+      args: [name.trim(), role.trim(), email.toLowerCase().trim(), password_hash],
+    });
 
-    const userId = info.lastInsertRowid as number;
-    const sessionId = createSession(userId);
+    const userId = Number(insertResult.lastInsertRowid);
+    const sessionId = await createSession(userId);
 
     const res = NextResponse.json({
       success: true,
